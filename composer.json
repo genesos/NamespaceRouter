@@ -1,5 +1,5 @@
 {
-  "name": "genesos/NamespaceRouter",
+  "name": "gnf/NamespaceRouter",
   "description": "Silex Routing Extension Driven By Namespace",
   "license": "MIT",
   "authors": [
