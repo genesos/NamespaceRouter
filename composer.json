@@ -1,0 +1,20 @@
+{
+  "name": "genesos/NamespaceRouter",
+  "description": "Silex Routing Extension Driven By Namespace",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "genesos",
+      "email": "genesos@gmail.com"
+    }
+  ],
+  "require": {
+    "php": ">=7",
+    "silex/silex": "^2.0"
+  },
+  "autoload": {
+    "psr-4": {
+      "Gnf\\NamespaceRouter\\": "src/"
+    }
+  }
+}
