@@ -3,7 +3,8 @@
 namespace Gnf\NamespaceRouter;
 
 use ReflectionClass;
-use ReflectionMethod;
+use Silex\Api\ControllerProviderInterface;
+use Silex\Application;
 use Silex\ControllerCollection;
 use Silex\Provider\Routing\RedirectableUrlMatcher;
 use Silex\Route;
@@ -35,31 +36,37 @@ class NamespaceTraveler
 	 */
 	private $parameters;
 	private $path_prefix;
+	/**
+	 * @var Application
+	 */
+	private $application;
 
 	/**
 	 * NamespaceRouterTraveler constructor.
 	 *
+	 * @param Application        $application
 	 * @param                    $root_controller
 	 * @param                    $path_prefix
 	 * @param array              $pathinfo_tokens
 	 * @param Request            $request
 	 * @param RequestContext     $request_context
 	 */
-	public function __construct($root_controller, $path_prefix, $pathinfo_tokens, $request, $request_context)
+	public function __construct(Application $application, $root_controller, $path_prefix, $pathinfo_tokens, $request, $request_context)
 	{
-		$this->parameters = null;
+		$this->application = $application;
 		$this->routing_station = $this->getRoutingStationInstance($root_controller);
 		$this->path_prefix = $path_prefix;
 		$this->passed_tokens = [];
 		$this->remain_tokens = $pathinfo_tokens;
 		$this->request = $request;
 		$this->request_context = $request_context;
+		$this->parameters = null;
 	}
 
 	/**
-	 * @param NamespaceRouteInterface $station_class_as_string
+	 * @param ControllerProviderInterface $station_class_as_string
 	 *
-	 * @return NamespaceRouteInterface
+	 * @return ControllerProviderInterface
 	 */
 	private function getRoutingStationInstance($station_class_as_string)
 	{
@@ -80,7 +87,7 @@ class NamespaceTraveler
 		return true;
 	}
 
-	private function checkStation(NamespaceRouteInterface $routing_station, $passed_tokens, Request $request)
+	private function checkStation(ControllerProviderInterface $routing_station, $passed_tokens, Request $request)
 	{
 		try {
 			$route_list = $this->listPlacesInStation($routing_station, $passed_tokens);
@@ -95,7 +102,7 @@ class NamespaceTraveler
 		return true;
 	}
 
-	private function listPlacesInStation(NamespaceRouteInterface $routing_station, $passed_tokens)
+	private function listPlacesInStation(ControllerProviderInterface $routing_station, $passed_tokens)
 	{
 		$controller_collection = $this->getStationPublicMethodToController($routing_station);
 		$base_controller_collection = new ControllerCollection(new Route());
@@ -107,16 +114,17 @@ class NamespaceTraveler
 		return $route_collection;
 	}
 
-	private function getStationPublicMethodToController(NamespaceRouteInterface $routing_station)
+	private function getStationPublicMethodToController(ControllerProviderInterface $routing_station)
 	{
-		$controller_collection = new ControllerCollection(new Route());
-		$routing_station->connect($controller_collection);
-		$class_relection = new ReflectionClass($routing_station);
-		foreach ($class_relection->getMethods(ReflectionMethod::IS_PUBLIC) as $method) {
-			if (in_array($method->getName(), ['connect', '__construct'])) {
-				continue;
-			}
-			$controller_collection->get($method->getName(), $method->getClosure($routing_station));
+		$controller_collection = $routing_station->connect($this->application);
+		if (!$controller_collection instanceof ControllerCollection) {
+			throw new \LogicException(
+				sprintf(
+					'The method "%s::connect" must return a "ControllerCollection" instance. Got: "%s"',
+					get_class($routing_station),
+					(is_object($controller_collection) ? get_class($controller_collection) : gettype($controller_collection))
+				)
+			);
 		}
 		return $controller_collection;
 	}
@@ -126,7 +134,7 @@ class NamespaceTraveler
 		$this->parameters = $parameters;
 	}
 
-	private function findNextStation(NamespaceRouteInterface $routing_station)
+	private function findNextStation(ControllerProviderInterface $routing_station)
 	{
 		$remain_tokens = $this->remain_tokens;
 		$current_tokens = [];
@@ -155,7 +163,7 @@ class NamespaceTraveler
 		if (!$reflection_class) {
 			return null;
 		}
-		if (!$reflection_class->isSubclassOf(NamespaceRouteInterface::class)) {
+		if (!$reflection_class->isSubclassOf(ControllerProviderInterface::class)) {
 			return null;
 		}
 

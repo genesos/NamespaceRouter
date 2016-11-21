@@ -11,29 +11,32 @@ $app->run();
 ```
 
 ```
-# AnyNamespace\RootController
+# \AnyNamespace\RootController
 # request '/' => 'root'
-class RootController implements NamespaceRouteInterface
+class RootController implements ControllerProviderInterface
 {
 	public function connect(ControllerCollection $controller_collection)
 	{
+		$controller_collection = $app['controllers_factory'];
 		$controller_collection->get('/', function () {
 			return new Response('root');
 		});
-	}
-
-	public function index(Request $request)
-	{
-		return new Response('get type ' . $request->get('type'));
+		return $controller_collection;
 	}
 }
 ```
 
 ```
-# AnyNamespace\Blog
-# request '/Blog/view' => 'blog view'
-class Blog implements NamespaceRouteInterface
+# \AnyNamespace\Blog
+# request '/Blog/View' => 'blog view'
+class Blog implements ControllerProviderInterface
 {
+	public function connect(ControllerCollection $controller_collection)
+	{
+		$controller_collection = $app['controllers_factory'];
+		$controller_collection->get('/View', [$this, 'View']);
+		return $controller_collection;
+	}
 	public function view()
 	{
 		return new Response('blog view');
@@ -42,12 +45,15 @@ class Blog implements NamespaceRouteInterface
 ```
 
 ```
-# AnyNamespace\Site\Blog
-# request '/Site/Blog/view' => 'admin view'
-class Admin implements NamespaceRouteInterface
+# \AnyNamespace\Site\Admin
+# request '/Site/Admin/View' => 'admin view'
+class Admin implements ControllerProviderInterface
 {
 	public function connect(ControllerCollection $controller_collection)
 	{
+		$controller_collection = $app['controllers_factory'];
+		$controller_collection->get('/View', [$this, 'View']);
+		return $controller_collection;
 	}
 	public function view()
 	{

@@ -2,6 +2,7 @@
 
 namespace Gnf\NamespaceRouter;
 
+use Silex\Application;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Exception\ResourceNotFoundException;
 use Symfony\Component\Routing\RequestContext;
@@ -19,17 +20,23 @@ class NamespaceRouter
 	 */
 	private $request_context;
 	private $path_prefix;
+	/**
+	 * @var Application
+	 */
+	private $application;
 
 	/**
 	 * NameSpaceRouter constructor.
 	 *
+	 * @param Application                               $application
 	 * @param                                           $root_controller
 	 * @param                                           $path_prefix
 	 * @param Request                                   $request
 	 * @param RequestContext                            $request_context
 	 */
-	public function __construct($root_controller, $path_prefix, $request, RequestContext $request_context)
+	public function __construct(Application $application, $root_controller, $path_prefix, $request, RequestContext $request_context)
 	{
+		$this->application = $application;
 		$this->root_controller = $root_controller;
 		$this->path_prefix = $path_prefix;
 		$this->request = $request;
@@ -42,6 +49,7 @@ class NamespaceRouter
 		$pathinfo_tokens = array_filter(explode('/', $pathinfo));
 		$pathinfo_tokens = $this->bypassPrefixIfValid($pathinfo_tokens);
 		$traveler = new NamespaceTraveler(
+			$this->application,
 			$this->root_controller,
 			$this->path_prefix,
 			$pathinfo_tokens,
@@ -63,16 +71,6 @@ class NamespaceRouter
 	}
 
 	/**
-	 * @param $pathinfo
-	 *
-	 * @throws ResourceNotFoundException
-	 */
-	private function throwResourceNotFoundException($pathinfo):void
-	{
-		throw new ResourceNotFoundException(sprintf('No routes found for "%s".', $pathinfo));
-	}
-
-	/**
 	 * @param $pathinfo_tokens
 	 *
 	 * @return array
@@ -88,5 +86,15 @@ class NamespaceRouter
 
 		$this->throwResourceNotFoundException('/' . implode('/', $pathinfo_tokens));
 		return [];
+	}
+
+	/**
+	 * @param $pathinfo
+	 *
+	 * @throws ResourceNotFoundException
+	 */
+	private function throwResourceNotFoundException($pathinfo):void
+	{
+		throw new ResourceNotFoundException(sprintf('No routes found for "%s".', $pathinfo));
 	}
 }

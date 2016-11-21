@@ -4,6 +4,7 @@ namespace Gnf\NamespaceRouter;
 
 use Pimple\Container;
 use Pimple\ServiceProviderInterface;
+use Silex\Api\ControllerProviderInterface;
 
 class NamespaceRouteServiceProvider implements ServiceProviderInterface
 {
@@ -19,8 +20,8 @@ class NamespaceRouteServiceProvider implements ServiceProviderInterface
 	/**
 	 * NamespaceRouteServiceProvider constructor.
 	 *
-	 * @param NamespaceRouteInterface $root_controller
-	 * @param string                  $path_prefix_str
+	 * @param ControllerProviderInterface $root_controller
+	 * @param string                      $path_prefix_str
 	 */
 	public function __construct($root_controller, $path_prefix_str = '/')
 	{
@@ -34,6 +35,7 @@ class NamespaceRouteServiceProvider implements ServiceProviderInterface
 			'routing.listener',
 			function ($default_route_listener, $app) {
 				return new NamespaceRouterListener(
+					$app,
 					$default_route_listener,
 					$app['request_matcher'],
 					$app['request_stack'],
